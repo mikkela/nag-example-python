@@ -1,5 +1,5 @@
-PowerPFM
-========
+NAG API Example using Python 
+============================
 
 This is small Python / Flask demo-app, demonstrating the use of the Nordic API Gateway
 
