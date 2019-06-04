@@ -75,14 +75,14 @@ def auth_logout():
 @app.route("/query/accounts")
 def query_accounts():
     http = util.init_http_api(session)
-    j = http.get("v1/accounts").json()
+    j = http.get("v2/accounts").json()
     return jsonify(j)
 
 
 @app.route("/query/accounts/<account_id>/transactions")
 def query_transactions(account_id):
     http = util.init_http_api(session)
-    j = http.get("v1/accounts/%s/transactions" % account_id).json()
+    j = http.get("v2/accounts/%s/transactions" % account_id).json()
     return jsonify(j)
 
 
