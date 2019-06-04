@@ -30,6 +30,7 @@
     <!-- spinner -->
     <div class="lds-ellipsis spinner" style="display: none"><div></div><div></div><div></div><div></div></div>
     <div class="container"></div>
+    <div id="paging_link" style="display: none">Fetch more transactions</div>
 </div>
 <script>
 
@@ -43,11 +44,21 @@
     }
 
     var show_transactions = function(account_id, account_name){
-        $("#transactions-list > .spinner").show();
         $("#transactions-list > .title").html("<h3>Transactions: " + account_name + "</h3>");
         $("#transactions-list > .container").empty();
 
-        $.getJSON("/query/accounts/" + account_id + "/transactions", function(result){
+        show_transactions_page(account_id);
+    }
+
+    var show_transactions_page = function(account_id, pagingtoken=null){
+        $("#transactions-list > .spinner").show();
+
+        var url = "/query/accounts/" + account_id + "/transactions?withDetails=true";
+        if (pagingtoken) {
+            url.append("&pagingToken=" + pagingtoken)
+        }
+
+        $.getJSON(url, function(result){
             $("#transactions-list > .spinner").hide();
 
             for(var i = 0; i < result.transactions.length; i++){
@@ -58,6 +69,18 @@
             $(".transaction").click(function(){
                 var obj = $(this);
                 show_transaction_details(obj.data("id"));
+            })
+
+            if (result.pagingToken) {
+                $("#paging_link").show();
+                $("#paging_link").attr("data-pagingtoken", result.pagingToken);
+            } else {
+                $("#paging_link").hide();
+            }
+
+            $("#paging_link").click(function(){
+                var obj = $(this);
+                show_transactions_page(account_id, account_name, obj.data("pagingtoken"));
             })
         });
     }
