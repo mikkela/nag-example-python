@@ -33,6 +33,15 @@
 </div>
 <script>
 
+    var show_transaction_details = function(transaction_id, details){
+        $(".details").empty();
+        if (details) {
+            $(".details[data-id='" + transaction_id + "']").append("<div class='message'>" + details.message + "</div>");
+        } else {
+            $(".details[data-id='" + transaction_id + "']").append("<div class='no-details'>No details for transaction</div>");
+        }
+    }
+
     var show_transactions = function(account_id, account_name){
         $("#transactions-list > .spinner").show();
         $("#transactions-list > .title").html("<h3>Transactions: " + account_name + "</h3>");
@@ -43,8 +52,13 @@
 
             for(var i = 0; i < result.transactions.length; i++){
                 var transaction = result.transactions[i];
-                $("#transactions-list > .container").append("<div class='transaction' data-id='" + transaction.id + "'><div class='date'>" + transaction.date.substring(0, 10) + "</div><div class='text'>" + transaction.text + "</div><div class='amount'>" + transaction.amount.currency + " " + transaction.amount.value.toLocaleString(undefined, { minimumFractionDigits: 2 }) + "</div></div");
+                $("#transactions-list > .container").append("<div class='transaction' data-id='" + transaction.id + "'><div class='date'>" + transaction.date.substring(0, 10) + "</div><div class='text'>" + transaction.text + "</div><div class='amount'>" + transaction.amount.currency + " " + transaction.amount.value.toLocaleString(undefined, { minimumFractionDigits: 2 }) + "</div></div><div class='details' data-id='" + transaction.id + "' data-details='" + transaction.details + "'</div>");
             }
+
+            $(".transaction").click(function(){
+                var obj = $(this);
+                show_transaction_details(obj.data("id"));
+            })
         });
     }
 
