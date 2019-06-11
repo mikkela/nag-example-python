@@ -4,7 +4,6 @@ from flask import *
 
 import config
 import util
-import urllib
 
 app = Flask(__name__)
 app.debug = True
@@ -83,7 +82,7 @@ def query_accounts():
 def query_transactions(account_id):
     http = util.init_http_api(session)
     url = "v2/accounts/%s/transactions" % account_id
-
+    
     query_params = {}
 
     if config.INCLUDE_TRANSACTION_DETAILS is True:
@@ -93,12 +92,26 @@ def query_transactions(account_id):
     if pagingtoken is not None:
         query_params["pagingtoken"] = pagingtoken
 
-    encoded_params = urllib.parse.urlencode(query_params)
-    if len(encoded_params) > 0:
-        url = url + "?" + encoded_params
+    encoded_params = build_query_string(query_params)
+    url = url + encoded_params
         
     j = http.get(url).json()
     return jsonify(j)
+
+
+def build_query_string(parameter_object):
+    query_parts = []
+
+    for parameter_key in parameter_object: 
+        formatted_param = "%s=%s" % (parameter_key, parameter_object[parameter_key])
+        query_parts.append(formatted_param)
+
+    query_string = "&".join(query_parts)
+
+    if len(query_string) > 0:
+        query_string = "?" + query_string
+
+    return query_string
 
 
 def complete_login(j):
