@@ -31,7 +31,7 @@ def auth_init():
     }
 
     j = http.post("v1/authentication/initialize", json=req).json()
-    if not j["authUrl"]:
+    if "authUrl" not in j:
         session.errorMessage = "Authentication failed. Check you credentials in config.py"
         return render_template("error.html")
     return redirect(j["authUrl"])
