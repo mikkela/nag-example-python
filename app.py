@@ -30,7 +30,10 @@ def auth_init():
         "language": "en",
     }
 
-    j = http.post("authentication/initialize", json=req).json()
+    j = http.post("v1/authentication/initialize", json=req).json()
+    if "authUrl" not in j:
+        session.errorMessage = "Authentication failed. Check you credentials in config.py"
+        return render_template("error.html")
     return redirect(j["authUrl"])
 
 
@@ -42,7 +45,7 @@ def auth_complete():
         "code": request.args.get("code")
     }
 
-    j = http.post("authentication/tokens", json=req).json()
+    j = http.post("v1/authentication/tokens", json=req).json()
     return complete_login(j)
 
 
@@ -57,7 +60,7 @@ def auth_unattended():
             "loginToken": request.form["loginToken"],
         }
 
-        j = http.post("authentication/unattended", json=req).json()
+        j = http.post("v1/authentication/unattended", json=req).json()
         return complete_login(j)
 
     return render_template("login_with_token.html")
@@ -72,14 +75,20 @@ def auth_logout():
 @app.route("/query/accounts")
 def query_accounts():
     http = util.init_http_api(session)
-    j = http.get("accounts").json()
+    j = http.get("v2/accounts").json()
     return jsonify(j)
 
 
 @app.route("/query/accounts/<account_id>/transactions")
 def query_transactions(account_id):
     http = util.init_http_api(session)
-    j = http.get("accounts/%s/transactions" % account_id).json()
+    url = "v2/accounts/%s/transactions?withDetails=true" % account_id
+
+    pagingtoken = request.args.get('pagingToken')
+    if pagingtoken is not None:
+        url = url + "&pagingtoken=" + pagingtoken
+        
+    j = http.get(url).json()
     return jsonify(j)
 
 

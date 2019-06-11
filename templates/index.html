@@ -30,22 +30,59 @@
     <!-- spinner -->
     <div class="lds-ellipsis spinner" style="display: none"><div></div><div></div><div></div><div></div></div>
     <div class="container"></div>
+    <button id="paging_link" style="display: none">Fetch more transactions</button>
 </div>
 <script>
 
+    var show_transaction_details = function(transaction_id, details){
+        $(".details").empty();
+        if (details) {
+            $(".details[data-id='" + transaction_id + "']").append("<div class='message'>" + details.message + "</div>");
+        } else {
+            $(".details[data-id='" + transaction_id + "']").append("<div class='no-details'>No details for transaction</div>");
+        }
+    }
 
     var show_transactions = function(account_id, account_name){
-        $("#transactions-list > .spinner").show();
         $("#transactions-list > .title").html("<h3>Transactions: " + account_name + "</h3>");
         $("#transactions-list > .container").empty();
 
-        $.getJSON("/query/accounts/" + account_id + "/transactions", function(result){
+        show_transactions_page(account_id);
+    }
+
+    var show_transactions_page = function(account_id, pagingtoken=null){
+        $("#transactions-list > .spinner").show();
+
+        var url = "/query/accounts/" + account_id + "/transactions";
+        if (pagingtoken) {
+            url = url.concat("?pagingToken=" + pagingtoken)
+        }
+        
+        $.getJSON(url, function(result){
             $("#transactions-list > .spinner").hide();
 
             for(var i = 0; i < result.transactions.length; i++){
                 var transaction = result.transactions[i];
-                $("#transactions-list > .container").append("<div class='transaction' data-id='" + transaction.id + "'><div class='date'>" + transaction.date.substring(0, 10) + "</div><div class='text'>" + transaction.text + "</div><div class='amount'>" + transaction.currency + " " + transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) + "</div></div");
+                $("#transactions-list > .container").append("<div class='transaction' data-id='" + transaction.id + "'><div class='date'>" + transaction.date.substring(0, 10) + "</div><div class='text'>" + transaction.text + "</div><div class='amount'>" + transaction.amount.currency + " " + transaction.amount.value.toLocaleString(undefined, { minimumFractionDigits: 2 }) + "</div></div><div class='details' data-id='" + transaction.id + "' data-details='" + transaction.details + "'</div>");
             }
+
+            $(".transaction").click(function(){
+                var obj = $(this);
+                show_transaction_details(obj.data("id"));
+            })
+
+            if (result.pagingToken) {
+                $("#paging_link").show();
+                $("#paging_link").data("pagingtoken", result.pagingToken);
+            } else {
+                $("#paging_link").hide();
+            }
+
+            $("#paging_link").unbind();
+            $("#paging_link").click(function(){
+                var obj = $(this);
+                show_transactions_page(account_id, obj.data("pagingtoken"));
+            })
         });
     }
 
@@ -58,7 +95,7 @@
 
             for(var i = 0; i < result.accounts.length; i++){
                 var account = result.accounts[i];
-                $("#account-list > .container").append("<div class='account' data-name='" + account.name + "' data-id='" + account.id + "'><div class='name'>" + account.name + "</div><div class='balance'>" + account.currency + " " + account.bookedBalance.toLocaleString(undefined, { minimumFractionDigits: 2 }) + "</div></div");
+                $("#account-list > .container").append("<div class='account' data-name='" + account.name + "' data-id='" + account.id + "'><div class='name'>" + account.name + "</div><div class='balance'>" + account.bookedBalance.currency + " " + account.bookedBalance.value.toLocaleString(undefined, { minimumFractionDigits: 2 }) + "</div></div");
             }
 
             $(".account").click(function(){

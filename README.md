@@ -21,6 +21,8 @@ Required Python packages
 - python-dateutil
 - pytz
 
+Requirements can be install by running `pip install -r requirements.txt`
+
 Running the code
 ----------------
 
