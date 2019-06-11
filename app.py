@@ -4,6 +4,7 @@ from flask import *
 
 import config
 import util
+import urllib
 
 app = Flask(__name__)
 app.debug = True
@@ -83,12 +84,18 @@ def query_transactions(account_id):
     http = util.init_http_api(session)
     url = "v2/accounts/%s/transactions" % account_id
 
+    query_params = {}
+
     if config.INCLUDE_TRANSACTION_DETAILS is True:
-        url = url + "?withDetails=true"
+        query_params["withDetails"] = "true"
 
     pagingtoken = request.args.get('pagingToken')
     if pagingtoken is not None:
-        url = url + "?pagingtoken=" + pagingtoken
+        query_params["pagingtoken"] = pagingtoken
+
+    encoded_params = urllib.parse.urlencode(query_params)
+    if len(encoded_params) > 0:
+        url = url + "?" + encoded_params
         
     j = http.get(url).json()
     return jsonify(j)
