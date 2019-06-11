@@ -9,7 +9,6 @@ app = Flask(__name__)
 app.debug = True
 app.secret_key = config.SECRET_KEY
 
-
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -82,11 +81,14 @@ def query_accounts():
 @app.route("/query/accounts/<account_id>/transactions")
 def query_transactions(account_id):
     http = util.init_http_api(session)
-    url = "v2/accounts/%s/transactions?withDetails=true" % account_id
+    url = "v2/accounts/%s/transactions" % account_id
+
+    if config.INCLUDE_TRANSACTION_DETAILS is True:
+        url = url + "?withDetails=true"
 
     pagingtoken = request.args.get('pagingToken')
     if pagingtoken is not None:
-        url = url + "&pagingtoken=" + pagingtoken
+        url = url + "?pagingtoken=" + pagingtoken
         
     j = http.get(url).json()
     return jsonify(j)
