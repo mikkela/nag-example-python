@@ -82,7 +82,13 @@ def query_accounts():
 @app.route("/query/accounts/<account_id>/transactions")
 def query_transactions(account_id):
     http = util.init_http_api(session)
-    j = http.get("v2/accounts/%s/transactions" % account_id).json()
+    url = "v2/accounts/%s/transactions?withDetails=true" % account_id
+
+    pagingtoken = request.args.get('pagingToken')
+    if pagingtoken is not None:
+        url = url + "&pagingtoken=" + pagingtoken
+        
+    j = http.get(url).json()
     return jsonify(j)
 
 

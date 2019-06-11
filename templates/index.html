@@ -53,11 +53,11 @@
     var show_transactions_page = function(account_id, pagingtoken=null){
         $("#transactions-list > .spinner").show();
 
-        var url = "/query/accounts/" + account_id + "/transactions?withDetails=true";
+        var url = "/query/accounts/" + account_id + "/transactions";
         if (pagingtoken) {
-            url.append("&pagingToken=" + pagingtoken)
+            url = url.concat("?pagingToken=" + pagingtoken)
         }
-
+        
         $.getJSON(url, function(result){
             $("#transactions-list > .spinner").hide();
 
@@ -73,14 +73,15 @@
 
             if (result.pagingToken) {
                 $("#paging_link").show();
-                $("#paging_link").attr("data-pagingtoken", result.pagingToken);
+                $("#paging_link").data("pagingtoken", result.pagingToken);
             } else {
                 $("#paging_link").hide();
             }
 
+            $("#paging_link").unbind();
             $("#paging_link").click(function(){
                 var obj = $(this);
-                show_transactions_page(account_id, account_name, obj.data("pagingtoken"));
+                show_transactions_page(account_id, obj.data("pagingtoken"));
             })
         });
     }
