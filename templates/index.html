@@ -79,6 +79,12 @@
         $.getJSON(url, function(result){
             $("#transactions-list > .spinner").hide();
 
+            if (result.error) {
+                $("#transactions-list > .container").append("<div class='error'>Error: " + result.error + "</div>")
+                $("#transactions-list > .container").append("<div class='error'>Details: " + result.details.reason + "</div>")
+                return;
+            }
+
             for(var i = 0; i < result.transactions.length; i++){
                 var transaction = result.transactions[i];
 
@@ -96,7 +102,7 @@
                 transactionDiv.append(textDiv)
                 transactionDiv.append(amountDiv)
                 transactionDiv.append(detailsDiv)
-                $("#transactions-list > .container").append(transactionDiv)                
+                $("#transactions-list > .container").append(transactionDiv)
             }
 
             $(".transaction").click(function(){
