@@ -34,12 +34,30 @@
 </div>
 <script>
 
-    var show_transaction_details = function(transaction_id, details){
-        $(".details").empty();
+    function format_transaction_details(details) {
+        removeEmptyProperties(details)
+        var formattedJson = JSON.stringify(details, null, 2);        
+        return formattedJson
+    }
+
+    const removeEmptyProperties = (obj) => {
+        Object.keys(obj).forEach(key => {
+            if (obj[key] && typeof obj[key] === 'object')
+                removeEmptyProperties(obj[key]);
+
+            else if (obj[key] == null)
+                delete obj[key];
+        });
+    };
+
+    var show_transaction_details = function(detailsDiv){        
+        details = detailsDiv.data("details")
+        formattedDetails = format_transaction_details(details)
+        detailsDiv.empty();
         if (details) {
-            $(".details[data-id='" + transaction_id + "']").append("<div class='message'>" + details.message + "</div>");
+            detailsDiv.append("<div class='message'>" + formattedDetails + "</div>");
         } else {
-            $(".details[data-id='" + transaction_id + "']").append("<div class='no-details'>No details for transaction</div>");
+            detailsDiv.append("<div class='no-details'>No details for transaction</div>");
         }
     }
 
@@ -61,14 +79,36 @@
         $.getJSON(url, function(result){
             $("#transactions-list > .spinner").hide();
 
+            if (result.error) {
+                $("#transactions-list > .container").append("<div class='error'>Error: " + result.error + "</div>")
+                $("#transactions-list > .container").append("<div class='error'>Details: " + result.details.reason + "</div>")
+                return;
+            }
+
             for(var i = 0; i < result.transactions.length; i++){
                 var transaction = result.transactions[i];
-                $("#transactions-list > .container").append("<div class='transaction' data-id='" + transaction.id + "'><div class='date'>" + transaction.date.substring(0, 10) + "</div><div class='text'>" + transaction.text + "</div><div class='amount'>" + transaction.amount.currency + " " + transaction.amount.value.toLocaleString(undefined, { minimumFractionDigits: 2 }) + "</div></div><div class='details' data-id='" + transaction.id + "' data-details='" + transaction.details + "'</div>");
+
+                var transactionDiv = $("<div class='transaction'>")
+                transactionDiv.data("id", transaction.id)
+
+                dateDiv = $("<div class='date'>").html(transaction.date.substring(0, 10))
+                textDiv = $("<div class='text'>").html(transaction.text)
+                amountDiv = $("<div class='amount'>").html(transaction.amount.currency + " " + transaction.amount.value.toLocaleString(undefined, { minimumFractionDigits: 2 }))
+
+                detailsDiv = $("<div class='details' id='details-" + transaction.id + "'>")
+                detailsDiv.data("details", transaction.details)
+
+                transactionDiv.append(dateDiv)
+                transactionDiv.append(textDiv)
+                transactionDiv.append(amountDiv)
+                transactionDiv.append(detailsDiv)
+                $("#transactions-list > .container").append(transactionDiv)
             }
 
             $(".transaction").click(function(){
-                var obj = $(this);
-                show_transaction_details(obj.data("id"));
+                var transaction = $(this);
+                var transactionDetails = transaction.find(".details")
+                show_transaction_details(transactionDetails);
             })
 
             if (result.pagingToken) {
