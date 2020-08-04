@@ -70,35 +70,87 @@ def auth_logout():
     del session["accessToken"]
     return redirect(url_for("index"))
 
-
-@app.route("/query/accounts")
-def query_accounts():
+def get_categories():
     http = util.init_http_api(session)
-    j = http.get("v2/accounts").json()
-    return jsonify(j)
+    return http.get("v2/category-sets/DK/categories").json()
 
+def get_accounts():
+    http = util.init_http_api(session)
+    return http.get("v2/accounts").json()
 
-@app.route("/query/accounts/<account_id>/transactions")
-def query_transactions(account_id):
+def get_transactions(account_id, pagingtoken, from_date):
     http = util.init_http_api(session)
     url = "v2/accounts/%s/transactions" % account_id
-    
+
     query_params = {}
 
     if config.INCLUDE_TRANSACTION_DETAILS is True:
         query_params["withDetails"] = "true"
 
-    pagingtoken = request.args.get('pagingToken')
     if pagingtoken is not None:
         query_params["pagingtoken"] = pagingtoken
 
+    if from_date is not None:
+        query_params["fromDate"] = from_date
+
     encoded_params = build_query_string(query_params)
     url = url + encoded_params
-        
-    j = http.get(url).json()
+
+    return http.get(url).json()
+
+def get_categorization(accounts, transactions):
+    body = {
+        "accounts" : []
+    }
+
+    counter = 0
+    while counter < len(accounts):
+        new_account = { "account": accounts[counter], "transactions": transactions[counter]}
+        body.get("accounts").append(new_account)
+        counter = counter + 1
+    http = util.init_http_api(session)
+    return http.post("v2/category-sets/DK/categorize", json=body).json()
+
+@app.route("/query/accounts")
+def query_accounts():
+    j = get_accounts()
     return jsonify(j)
 
 
+@app.route("/query/accounts/<account_id>/transactions")
+def query_transactions(account_id):
+    j = get_transactions(account_id, request.args.get('pagingToken'), None)
+    return jsonify(j)
+
+@app.route("/dump/categorization")
+def dump_categorization():
+    categories = get_categories()
+    accounts = get_accounts()
+    result = {
+        "transactions": []
+    }
+    result.update(categories)
+    result.update(accounts)
+
+    for account in accounts.get("accounts"):
+        transactions = []
+        pagingtoken = None
+        counter = 0
+        while counter < 10:
+            translist = get_transactions(account.get("id"), pagingtoken, "2020-01-01")
+            pagingtoken = translist.get("pagingToken")
+            t = translist.get("transactions")
+            transactions = transactions + t
+            counter = counter + 1
+            if len(t) < 50:
+                break
+        result["transactions"].append(transactions)
+
+    categorization = get_categorization(result["accounts"], result["transactions"])
+
+    result["categorization"] = { "accounts": categorization["accounts"]}
+    return jsonify(result)
+    
 def build_query_string(parameter_object):
     query_parts = []
 
